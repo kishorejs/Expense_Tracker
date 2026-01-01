@@ -99,7 +99,9 @@ function renderDashboard(items) {
   div.innerHTML = '';
 
   const filtered = selectedMonth
-    ? items.filter(i => i.expense_month.startsWith(selectedMonth))
+    ? items.filter(
+        i => i.expense_month && i.expense_month.startsWith(selectedMonth)
+      )
     : items;
 
   if (filtered.length === 0) {
@@ -122,6 +124,13 @@ function renderDashboard(items) {
         Spent: ₹${cat.spent_amount}<br>
         Utilization: ${cat.utilization_pct}%<br><br>
 
+        <button onclick="openEditExpense(
+          ${cat.expense_cat_id},
+          '${cat.expense_month.substring(0,7)}'
+        )">
+          Edit Expense
+        </button>
+
         <button onclick="deleteLatestExpense(
           ${cat.expense_cat_id},
           '${cat.expense_month.substring(0,7)}'
@@ -132,6 +141,7 @@ function renderDashboard(items) {
     `;
   });
 }
+
 
 /* ================================
    Load Expense Categories (Dropdown)
@@ -237,5 +247,76 @@ function deleteLatestExpense(expenseCatId, month) {
     .catch(err => {
       console.error(err);
       alert('Error deleting expense');
+    });
+}
+
+
+function openEditExpense(expenseCatId, month) {
+  const expenseMonth = month + '-01';
+
+  fetch(
+    `${EXPENSE_API_URL}?expense_cat_id=${expenseCatId}&expense_month=${expenseMonth}&orderBy=created_at:desc`
+  )
+    .then(res => res.json())
+    .then(data => {
+      if (!data.items || data.items.length === 0) {
+        alert('No expense found to edit');
+        return;
+      }
+
+      const exp = data.items[0]; // latest expense
+
+      // Prefill form
+      document.getElementById('expenseCategory').value = exp.expense_cat_id;
+      document.getElementById('amount').value = exp.amount;
+      document.getElementById('expenseDate').value =
+        exp.expense_date.substring(0, 10);
+      document.getElementById('notes').value = exp.notes || '';
+
+      // store expense_id globally
+      window.editExpenseId = exp.expense_id;
+
+      alert('Modify the details and click "Update Expense"');
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error loading expense for edit');
+    });
+}
+
+
+function updateExpense(event) {
+  event.preventDefault();
+
+  if (!window.editExpenseId) {
+    alert('No expense selected for update');
+    return;
+  }
+
+  const amount = document.getElementById('amount').value;
+  const expenseDate = document.getElementById('expenseDate').value;
+  const notes = document.getElementById('notes').value;
+
+  const payload = {
+    amount: amount,
+    expense_date: expenseDate + 'T00:00:00Z',
+    notes: notes
+  };
+
+  fetch(`${EXPENSE_API_URL}${window.editExpenseId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('Update failed');
+      alert('Expense updated successfully');
+      window.editExpenseId = null;
+      document.getElementById('expenseForm').reset();
+      loadDashboard();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error updating expense');
     });
 }
