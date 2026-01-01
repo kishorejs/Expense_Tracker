@@ -71,31 +71,34 @@ function renderCategoryDonut(items) {
   const selectedMonth = document.getElementById('monthSelect').value;
 
   const monthItems = selectedMonth
-    ? items.filter(i => i.expense_month && i.expense_month.startsWith(selectedMonth))
+    ? items.filter(
+        i => i.expense_month && i.expense_month.startsWith(selectedMonth)
+      )
     : items;
 
-  const labels = monthItems.map(i => i.category_name);
-  const spentData = monthItems.map(i => i.spent_amount);
-  const budgetData = monthItems.map(i => i.monthly_budget);
+  if (monthItems.length === 0) return;
+
+  const spent = monthItems.reduce((sum, i) => sum + i.spent_amount, 0);
+  const budget = monthItems.reduce((sum, i) => sum + i.monthly_budget, 0);
+  const remaining = Math.max(budget - spent, 0);
+
+  const utilizationPct = budget > 0 ? (spent / budget) * 100 : 0;
+
+  let color = '#4caf50'; // green
+  if (utilizationPct > 90) color = '#f44336';
+  else if (utilizationPct > 70) color = '#ff9800';
 
   const ctx = document.getElementById('categoryDonut').getContext('2d');
-
   if (donutChart) donutChart.destroy();
 
   donutChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: labels,
+      labels: ['Spent', 'Remaining'],
       datasets: [
         {
-          label: 'Spent',
-          data: spentData,
-          backgroundColor: ['#4caf50', '#ff9800', '#f44336', '#2196f3']
-        },
-        {
-          label: 'Budget',
-          data: budgetData,
-          backgroundColor: ['#c8e6c9', '#ffe0b2', '#ffcdd2', '#bbdefb']
+          data: [spent, remaining],
+          backgroundColor: [color, '#e0e0e0']
         }
       ]
     },
@@ -103,12 +106,14 @@ function renderCategoryDonut(items) {
       plugins: {
         title: {
           display: true,
-          text: 'Budget vs Spent (Selected Month)'
+          text: `Budget Utilization (${utilizationPct.toFixed(1)}%)`
         }
-      }
+      },
+      cutout: '65%'
     }
   });
 }
+
 
 
 function renderMonthlyTrend(items) {
@@ -124,18 +129,18 @@ function renderMonthlyTrend(items) {
   const data = labels.map(m => monthMap[m]);
 
   const ctx = document.getElementById('monthlyTrend').getContext('2d');
-
   if (trendChart) trendChart.destroy();
 
   trendChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: labels,
+      labels,
       datasets: [
         {
-          label: 'Total Spent',
-          data: data,
+          label: 'Total Spent (₹)',
+          data,
           borderWidth: 2,
+          tension: 0.3,
           fill: false
         }
       ]
@@ -146,10 +151,18 @@ function renderMonthlyTrend(items) {
           display: true,
           text: 'Monthly Expense Trend'
         }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: value => `₹${value}`
+          }
+        }
       }
     }
   });
 }
+
 
 
 /* ================================
