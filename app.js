@@ -27,34 +27,34 @@ function loadDashboard() {
     .then(data => {
       console.log('Dashboard API response:', data);
 
-      // Defensive: ensure items always exists
       const items = Array.isArray(data.items) ? data.items : [];
 
-      // Store globally
+      // store globally
       window.dashboardItems = items;
 
-      // Populate Month LOV safely
+      // populate month LOV
       populateMonthLov(items);
 
-      // Render dashboard safely
+      // render dashboard
       renderDashboard(items);
+
+      // 🔴 IMPORTANT: load category LOV
+      loadExpenseCategories();
     })
     .catch(err => {
       console.error('Dashboard load error:', err);
 
-      // User-friendly fallback
-      const dashboard = document.getElementById('dashboard');
-      dashboard.innerHTML = `
+      document.getElementById('dashboard').innerHTML = `
         <p style="color:red;">
           Error loading dashboard. Please refresh the page.
         </p>
       `;
 
-      // Reset month dropdown
-      const monthSelect = document.getElementById('monthSelect');
-      monthSelect.innerHTML = '<option value="">--</option>';
+      document.getElementById('monthSelect').innerHTML =
+        '<option value="">--</option>';
     });
 }
+
 
 
 /* ================================
