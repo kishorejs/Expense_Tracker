@@ -2,69 +2,215 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Expense Tracker</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <title>Expense Tracker</title>
 
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Styles -->
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    h2 {
+      margin-bottom: 5px;
+    }
+
+    h3 {
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 30px 0;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    select, input, textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    /* Layout containers */
+    .container {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+    }
+
+    /* Dashboard cards */
+    .category-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 6px solid #22c55e;
+    }
+
+    .category-details {
+      line-height: 1.6;
+    }
+
+    .category-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .actions button {
+      margin-left: 6px;
+    }
+
+    /* Buttons */
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    /* Charts */
+    .charts {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .chart-box {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+    }
+
+    /* Form actions */
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .charts {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 
 <body onload="loadDashboard()">
 
+  <div class="container">
+
+    <!-- HEADER -->
     <h2>Expense Dashboard</h2>
 
-    <label>Select Month:</label>
-    <select id="monthSelect" onchange="renderDashboard(window.dashboardItems)">
-    </select>
+    <div class="card">
+      <label>Select Month</label>
+      <select id="monthSelect" onchange="renderDashboard(window.dashboardItems)">
+      </select>
+    </div>
 
+    <!-- DASHBOARD -->
     <div id="dashboard"></div>
 
-    <hr>
+    <!-- INSIGHTS -->
+    <h3>Spending Insights</h3>
+
+    <div class="charts">
+      <div class="chart-box">
+        <canvas id="categoryDonut" width="300"></canvas>
+      </div>
+
+      <div class="chart-box">
+        <canvas id="monthlyTrend" width="500"></canvas>
+      </div>
+    </div>
 
     <hr>
 
-<h3>Spending Insights</h3>
+    <!-- ADD / EDIT EXPENSE -->
+    <h3>Add / Update Expense</h3>
 
-<div style="display:flex; gap:40px; flex-wrap:wrap;">
-  <div style="width:350px;">
-    <canvas id="categoryDonut"></canvas>
-  </div>
+    <div class="card">
+      <form id="expenseForm" onsubmit="addExpense(event)">
 
-  <div style="width:500px;">
-    <canvas id="monthlyTrend"></canvas>
-  </div>
-</div>
+        <label>Category</label>
+        <select id="expenseCategory" required></select>
 
-<hr>
+        <label>Amount</label>
+        <input type="number" id="amount" required>
 
+        <label>Expense Date</label>
+        <input type="date" id="expenseDate" required>
 
-    <h3>Add Expense</h3>
+        <label>Notes</label>
+        <textarea id="notes" rows="3"></textarea>
 
-    <form id="expenseForm" onsubmit="addExpense(event)">
-
-        <label>Category</label><br>
-        <select id="expenseCategory" required></select><br><br>
-
-        <label>Amount</label><br>
-        <input type="number" id="amount" required><br><br>
-
-        <label>Expense Date</label><br>
-        <input type="date" id="expenseDate" required><br><br>
-
-        <label>Notes</label><br>
-        <textarea id="notes"></textarea><br><br>
-
-        <button type="submit">Add Expense</button>
-
-        <button type="button" onclick="updateExpense(event)">
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Add Expense</button>
+          <button type="button" class="btn-secondary" onclick="updateExpense(event)">
             Update Expense
-        </button>
+          </button>
+        </div>
 
+      </form>
+    </div>
 
-    </form>
+  </div>
 
-    <script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 
 </html>
