@@ -7,16 +7,29 @@ fetch(API_URL)
 
 
 function renderDashboard(data) {
-const div = document.getElementById('dashboard');
-div.innerHTML = '';
-data.items.forEach(cat => {
-const color = cat.utilization > 80 ? 'red' : 'green';
-div.innerHTML += `
-<div style="border-left:5px solid ${color}; padding:10px; margin:10px">
-<b>${cat.name}</b><br>
-Budget: ₹${cat.monthly_budget}<br>
-Spent: ₹${cat.spent}<br>
-Utilization: ${cat.utilization}%
-</div>`;
-});
+  const div = document.getElementById('dashboard');
+  div.innerHTML = '';
+
+  if (!data.items || data.items.length === 0) {
+    div.innerHTML = '<p>No expenses recorded yet.</p>';
+    return;
+  }
+
+  data.items.forEach(cat => {
+    const color =
+      cat.alert_status === 'RED' ? 'red' : 'green';
+
+    div.innerHTML += `
+      <div style="
+        border-left:5px solid ${color};
+        padding:10px;
+        margin:10px;
+      ">
+        <b>${cat.category_name}</b><br>
+        Budget: ₹${cat.monthly_budget}<br>
+        Spent: ₹${cat.spent_amount}<br>
+        Utilization: ${cat.utilization_pct}%
+      </div>
+    `;
+  });
 }
