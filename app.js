@@ -135,13 +135,15 @@ function addExpense(event) {
   const amount = document.getElementById('amount').value;
   const expenseDate = document.getElementById('expenseDate').value;
   const notes = document.getElementById('notes').value;
+  const expenseDateISO = expenseDate + 'T00:00:00Z';
+
 
   const expenseMonth = expenseDate.substring(0, 7) + '-01';
 
   const payload = {
     expense_cat_id: catId,
     amount: amount,
-    expense_date: expenseDate,
+    expense_date: expenseDateISO,
     expense_month: expenseMonth,
     notes: notes
   };
