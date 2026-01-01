@@ -10,7 +10,11 @@ const CATEGORY_API_URL =
 const EXPENSE_API_URL =
   'https://v2mwsyt98qpxgak-demoatptraining.adb.eu-frankfurt-1.oraclecloudapps.com/ords/expense/daily_expenses/';
 
-/* store dashboard data globally */
+let donutChart = null;
+let trendChart = null;
+
+
+  /* store dashboard data globally */
 window.dashboardItems = [];
 
 /* ================================
@@ -38,6 +42,9 @@ function loadDashboard() {
       // render dashboard
       renderDashboard(items);
 
+      renderCharts(items);
+
+
       // 🔴 IMPORTANT: load category LOV
       loadExpenseCategories();
     })
@@ -55,6 +62,94 @@ function loadDashboard() {
     });
 }
 
+function renderCharts(items) {
+  renderCategoryDonut(items);
+  renderMonthlyTrend(items);
+}
+
+function renderCategoryDonut(items) {
+  const selectedMonth = document.getElementById('monthSelect').value;
+
+  const monthItems = selectedMonth
+    ? items.filter(i => i.expense_month && i.expense_month.startsWith(selectedMonth))
+    : items;
+
+  const labels = monthItems.map(i => i.category_name);
+  const spentData = monthItems.map(i => i.spent_amount);
+  const budgetData = monthItems.map(i => i.monthly_budget);
+
+  const ctx = document.getElementById('categoryDonut').getContext('2d');
+
+  if (donutChart) donutChart.destroy();
+
+  donutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Spent',
+          data: spentData,
+          backgroundColor: ['#4caf50', '#ff9800', '#f44336', '#2196f3']
+        },
+        {
+          label: 'Budget',
+          data: budgetData,
+          backgroundColor: ['#c8e6c9', '#ffe0b2', '#ffcdd2', '#bbdefb']
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Budget vs Spent (Selected Month)'
+        }
+      }
+    }
+  });
+}
+
+
+function renderMonthlyTrend(items) {
+  const monthMap = {};
+
+  items.forEach(i => {
+    if (!i.expense_month) return;
+    const month = i.expense_month.substring(0, 7);
+    monthMap[month] = (monthMap[month] || 0) + i.spent_amount;
+  });
+
+  const labels = Object.keys(monthMap).sort();
+  const data = labels.map(m => monthMap[m]);
+
+  const ctx = document.getElementById('monthlyTrend').getContext('2d');
+
+  if (trendChart) trendChart.destroy();
+
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Total Spent',
+          data: data,
+          borderWidth: 2,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Monthly Expense Trend'
+        }
+      }
+    }
+  });
+}
 
 
 /* ================================
