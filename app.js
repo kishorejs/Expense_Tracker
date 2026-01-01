@@ -177,14 +177,17 @@ function addExpense(event) {
   const expenseDate = document.getElementById('expenseDate').value;
   const notes = document.getElementById('notes').value;
 
-  // ORDS expects ISO-8601 timestamp
   const expenseDateISO = expenseDate + 'T00:00:00Z';
+  const expenseMonthISO = expenseDate.substring(0, 7) + '-01T00:00:00Z';
+  const createdAtISO = new Date().toISOString(); // system date/time
 
   const payload = {
     expense_cat_id: catId,
     amount: amount,
     expense_date: expenseDateISO,
-    notes: notes
+    expense_month: expenseMonthISO,
+    notes: notes,
+    created_at: createdAtISO
   };
 
   fetch(EXPENSE_API_URL, {
@@ -208,6 +211,7 @@ function addExpense(event) {
       alert('Error adding expense');
     });
 }
+
 
 
 /* ================================
@@ -293,14 +297,22 @@ function updateExpense(event) {
     return;
   }
 
+  const catId = document.getElementById('expenseCategory').value;
   const amount = document.getElementById('amount').value;
   const expenseDate = document.getElementById('expenseDate').value;
   const notes = document.getElementById('notes').value;
 
+  const expenseDateISO = expenseDate + 'T00:00:00Z';
+  const expenseMonthISO = expenseDate.substring(0, 7) + '-01T00:00:00Z';
+  const createdAtISO = new Date().toISOString(); // system date/time
+
   const payload = {
+    expense_cat_id: catId,
     amount: amount,
-    expense_date: expenseDate + 'T00:00:00Z',
-    notes: notes
+    expense_date: expenseDateISO,
+    expense_month: expenseMonthISO,
+    notes: notes,
+    created_at: createdAtISO
   };
 
   fetch(`${EXPENSE_API_URL}${window.editExpenseId}`, {
@@ -320,3 +332,4 @@ function updateExpense(event) {
       alert('Error updating expense');
     });
 }
+
