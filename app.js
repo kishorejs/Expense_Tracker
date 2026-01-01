@@ -135,16 +135,14 @@ function addExpense(event) {
   const amount = document.getElementById('amount').value;
   const expenseDate = document.getElementById('expenseDate').value;
   const notes = document.getElementById('notes').value;
+
+  // ORDS expects ISO-8601 timestamp
   const expenseDateISO = expenseDate + 'T00:00:00Z';
-
-
-  const expenseMonth = expenseDate.substring(0, 7) + '-01';
 
   const payload = {
     expense_cat_id: catId,
     amount: amount,
     expense_date: expenseDateISO,
-    expense_month: expenseMonth,
     notes: notes
   };
 
@@ -153,17 +151,23 @@ function addExpense(event) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
-  .then(response => {
-    if (!response.ok) throw new Error('Insert failed');
-    alert('Expense added successfully');
-    document.getElementById('expenseForm').reset();
-    loadDashboard();
-  })
-  .catch(err => {
-    console.error(err);
-    alert('Error adding expense');
-  });
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(t => {
+          console.error(t);
+          throw new Error('Insert failed');
+        });
+      }
+      alert('Expense added successfully');
+      document.getElementById('expenseForm').reset();
+      loadDashboard();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error adding expense');
+    });
 }
+
 
 /* ================================
    Delete Latest Expense (POST → DELETE)
