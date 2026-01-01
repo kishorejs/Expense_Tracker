@@ -7,7 +7,7 @@ const DASHBOARD_API_URL =
 const CATEGORY_API_URL =
   'https://v2mwsyt98qpxgak-demoatptraining.adb.eu-frankfurt-1.oraclecloudapps.com/ords/expense/expense_categories/';
 
-const EXPENSE_POST_URL =
+const EXPENSE_API_URL =
   'https://v2mwsyt98qpxgak-demoatptraining.adb.eu-frankfurt-1.oraclecloudapps.com/ords/expense/daily_expenses/';
 
 /* store dashboard data globally */
@@ -89,14 +89,21 @@ function renderDashboard(items) {
         <b>${cat.category_name}</b><br>
         Budget: ₹${cat.monthly_budget}<br>
         Spent: ₹${cat.spent_amount}<br>
-        Utilization: ${cat.utilization_pct}%
+        Utilization: ${cat.utilization_pct}%<br><br>
+
+        <button onclick="deleteLatestExpense(
+          ${cat.expense_cat_id},
+          '${cat.expense_month.substring(0,7)}'
+        )">
+          Delete Last Expense
+        </button>
       </div>
     `;
   });
 }
 
 /* ================================
-   Load Expense Categories
+   Load Expense Categories (Dropdown)
 ================================ */
 function loadExpenseCategories() {
   fetch(CATEGORY_API_URL)
@@ -139,7 +146,7 @@ function addExpense(event) {
     notes: notes
   };
 
-  fetch(EXPENSE_POST_URL, {
+  fetch(EXPENSE_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -154,4 +161,44 @@ function addExpense(event) {
     console.error(err);
     alert('Error adding expense');
   });
+}
+
+/* ================================
+   Delete Latest Expense (POST → DELETE)
+================================ */
+function deleteLatestExpense(expenseCatId, month) {
+  if (!confirm('Delete the latest expense for this category?')) {
+    return;
+  }
+
+  const expenseMonth = month + '-01';
+
+  // 1️⃣ Get latest expense for category & month
+  fetch(
+    `${EXPENSE_API_URL}?expense_cat_id=${expenseCatId}&expense_month=${expenseMonth}&orderBy=created_at:desc`
+  )
+    .then(response => response.json())
+    .then(data => {
+      if (!data.items || data.items.length === 0) {
+        alert('No expense found to delete');
+        return;
+      }
+
+      const expenseId = data.items[0].expense_id;
+
+      // 2️⃣ Delete that expense
+      return fetch(`${EXPENSE_API_URL}${expenseId}`, {
+        method: 'DELETE'
+      });
+    })
+    .then(response => {
+      if (!response) return;
+      if (!response.ok) throw new Error('Delete failed');
+      alert('Expense deleted');
+      loadDashboard();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error deleting expense');
+    });
 }
