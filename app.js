@@ -1,35 +1,42 @@
 /* ================================
-   1. ORDS API URL
+   ORDS API URLs
 ================================ */
-const API_URL =
+const DASHBOARD_API_URL =
   'https://v2mwsyt98qpxgak-demoatptraining.adb.eu-frankfurt-1.oraclecloudapps.com/ords/expense/vw_expense_dashboard_base/';
 
+const CATEGORY_API_URL =
+  'https://v2mwsyt98qpxgak-demoatptraining.adb.eu-frankfurt-1.oraclecloudapps.com/ords/expense/expense_categories/';
+
+const EXPENSE_POST_URL =
+  'https://v2mwsyt98qpxgak-demoatptraining.adb.eu-frankfurt-1.oraclecloudapps.com/ords/expense/daily_expenses/';
+
+/* store dashboard data globally */
+window.dashboardItems = [];
 
 /* ================================
-   2. Page Load Entry Point
+   Page Load
 ================================ */
 function loadDashboard() {
-  fetch(API_URL)
+  fetch(DASHBOARD_API_URL)
     .then(response => response.json())
     .then(data => {
-      populateMonthLov(data.items);
-      renderDashboard(data.items);
+      window.dashboardItems = data.items || [];
+      populateMonthLov(window.dashboardItems);
+      renderDashboard(window.dashboardItems);
+      loadExpenseCategories();
     })
     .catch(err => {
       console.error(err);
       document.getElementById('dashboard').innerHTML =
-        '<p>Error loading data</p>';
+        '<p>Error loading dashboard</p>';
     });
 }
 
-
 /* ================================
-   3. Populate Month LOV
+   Month LOV
 ================================ */
 function populateMonthLov(items) {
   const select = document.getElementById('monthSelect');
-
-  // Clear existing options (VERY IMPORTANT)
   select.innerHTML = '';
 
   const months = [...new Set(
@@ -51,27 +58,25 @@ function populateMonthLov(items) {
   });
 }
 
-
 /* ================================
-   4. Render Dashboard Cards
+   Render Dashboard
 ================================ */
 function renderDashboard(items) {
   const div = document.getElementById('dashboard');
-  const selectedMonth =
-    document.getElementById('monthSelect').value;
+  const selectedMonth = document.getElementById('monthSelect').value;
 
   div.innerHTML = '';
 
-  const filteredItems = selectedMonth
+  const filtered = selectedMonth
     ? items.filter(i => i.expense_month.startsWith(selectedMonth))
     : items;
 
-  if (filteredItems.length === 0) {
-    div.innerHTML = '<p>No data for selected month</p>';
+  if (filtered.length === 0) {
+    div.innerHTML = '<p>No expenses recorded yet.</p>';
     return;
   }
 
-  filteredItems.forEach(cat => {
+  filtered.forEach(cat => {
     const color =
       cat.alert_status === 'RED' ? 'red' : 'green';
 
@@ -87,5 +92,66 @@ function renderDashboard(items) {
         Utilization: ${cat.utilization_pct}%
       </div>
     `;
+  });
+}
+
+/* ================================
+   Load Expense Categories
+================================ */
+function loadExpenseCategories() {
+  fetch(CATEGORY_API_URL)
+    .then(response => response.json())
+    .then(data => {
+      const select = document.getElementById('expenseCategory');
+      select.innerHTML = '';
+
+      data.items.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.expense_cat_id;
+        opt.text = cat.name;
+        select.appendChild(opt);
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Failed to load categories');
+    });
+}
+
+/* ================================
+   Add Expense (POST)
+================================ */
+function addExpense(event) {
+  event.preventDefault();
+
+  const catId = document.getElementById('expenseCategory').value;
+  const amount = document.getElementById('amount').value;
+  const expenseDate = document.getElementById('expenseDate').value;
+  const notes = document.getElementById('notes').value;
+
+  const expenseMonth = expenseDate.substring(0, 7) + '-01';
+
+  const payload = {
+    expense_cat_id: catId,
+    amount: amount,
+    expense_date: expenseDate,
+    expense_month: expenseMonth,
+    notes: notes
+  };
+
+  fetch(EXPENSE_POST_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Insert failed');
+    alert('Expense added successfully');
+    document.getElementById('expenseForm').reset();
+    loadDashboard();
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Error adding expense');
   });
 }

@@ -1,11 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
 <body onload="loadDashboard()">
 
   <h2>Expense Dashboard</h2>
 
   <label>Select Month:</label>
-  <select id="monthSelect" onchange="loadDashboard()"></select>
+  <select id="monthSelect" onchange="renderDashboard(window.dashboardItems)">
+  </select>
 
   <div id="dashboard"></div>
 
+  <hr>
+
+  <h3>Add Expense</h3>
+
+  <form id="expenseForm" onsubmit="addExpense(event)">
+
+    <label>Category</label><br>
+    <select id="expenseCategory" required></select><br><br>
+
+    <label>Amount</label><br>
+    <input type="number" id="amount" required><br><br>
+
+    <label>Expense Date</label><br>
+    <input type="date" id="expenseDate" required><br><br>
+
+    <label>Notes</label><br>
+    <textarea id="notes"></textarea><br><br>
+
+    <button type="submit">Add Expense</button>
+
+  </form>
+
   <script src="app.js"></script>
 </body>
+</html>
