@@ -29,18 +29,25 @@ function loadDashboard() {
 function populateMonthLov(items) {
   const select = document.getElementById('monthSelect');
 
-  // Prevent re-populating on every reload
-  if (select.options.length > 0) return;
+  // Clear existing options (VERY IMPORTANT)
+  select.innerHTML = '';
 
   const months = [...new Set(
     items.map(i => i.expense_month.substring(0, 7))
   )];
 
-  months.forEach(month => {
-    const option = document.createElement('option');
-    option.value = month;
-    option.text = month;
-    select.appendChild(option);
+  if (months.length === 0) {
+    const opt = document.createElement('option');
+    opt.text = 'No data';
+    select.appendChild(opt);
+    return;
+  }
+
+  months.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.text = m;
+    select.appendChild(opt);
   });
 }
 
