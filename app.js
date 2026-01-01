@@ -18,19 +18,44 @@ window.dashboardItems = [];
 ================================ */
 function loadDashboard() {
   fetch(DASHBOARD_API_URL)
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Dashboard API failed');
+      }
+      return response.json();
+    })
     .then(data => {
-      window.dashboardItems = data.items || [];
-      populateMonthLov(window.dashboardItems);
-      renderDashboard(window.dashboardItems);
-      loadExpenseCategories();
+      console.log('Dashboard API response:', data);
+
+      // Defensive: ensure items always exists
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      // Store globally
+      window.dashboardItems = items;
+
+      // Populate Month LOV safely
+      populateMonthLov(items);
+
+      // Render dashboard safely
+      renderDashboard(items);
     })
     .catch(err => {
-      console.error(err);
-      document.getElementById('dashboard').innerHTML =
-        '<p>Error loading dashboard</p>';
+      console.error('Dashboard load error:', err);
+
+      // User-friendly fallback
+      const dashboard = document.getElementById('dashboard');
+      dashboard.innerHTML = `
+        <p style="color:red;">
+          Error loading dashboard. Please refresh the page.
+        </p>
+      `;
+
+      // Reset month dropdown
+      const monthSelect = document.getElementById('monthSelect');
+      monthSelect.innerHTML = '<option value="">--</option>';
     });
 }
+
 
 /* ================================
    Month LOV
@@ -39,13 +64,18 @@ function populateMonthLov(items) {
   const select = document.getElementById('monthSelect');
   select.innerHTML = '';
 
-  const months = [...new Set(
-    items.map(i => i.expense_month.substring(0, 7))
-  )];
+  const months = [
+    ...new Set(
+      items
+        .filter(i => i.expense_month)
+        .map(i => i.expense_month.substring(0, 7))
+    )
+  ];
 
   if (months.length === 0) {
     const opt = document.createElement('option');
     opt.text = 'No data';
+    opt.value = '';
     select.appendChild(opt);
     return;
   }
@@ -57,6 +87,7 @@ function populateMonthLov(items) {
     select.appendChild(opt);
   });
 }
+
 
 /* ================================
    Render Dashboard
