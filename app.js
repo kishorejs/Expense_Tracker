@@ -188,13 +188,23 @@ function populateMonthLov(items) {
     return;
   }
 
-  months.forEach(m => {
+  months.sort().forEach(m => {
+    const [year, month] = m.split('-');
+
+    // Convert to Jan-26 format
+    const dateObj = new Date(year, month - 1);
+    const label = dateObj.toLocaleString('en-US', {
+      month: 'short',
+      year: '2-digit'
+    });
+
     const opt = document.createElement('option');
-    opt.value = m;
-    opt.text = m;
+    opt.value = m;     // IMPORTANT: value stays YYYY-MM
+    opt.text = label;  // Display: Jan-26
     select.appendChild(opt);
   });
 }
+
 
 
 /* ================================
